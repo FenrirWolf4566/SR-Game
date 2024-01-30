@@ -1,6 +1,6 @@
 import socket
 from _thread import *
-from entities import Player, Fruit
+from shared.entities import Player, Fruit
 import pickle
 
 server = "127.0.0.1"
