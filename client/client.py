@@ -1,6 +1,6 @@
 import pygame
-from network import Network
 from shared.entities import Player, Fruit
+from .network import Network
 
 width = 1000
 height = 500
