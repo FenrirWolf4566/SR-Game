@@ -1,73 +1,59 @@
 import asyncio
+import network
 import signal
 import socket
 
-Addr = tuple[str, int]
-Sock = socket.socket
+HOST_ADDR = ('192.168.1.31', 12345)
 
-HOST_ADDR = Addr(('192.168.1.31', 12345))
-
-server = Sock(socket.AF_INET, socket.SOCK_STREAM)
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(HOST_ADDR)
 server.listen()
 print(f'Listening on {HOST_ADDR}')
 server.setblocking(False)
 
+nws: dict[network.Address, network.Network] = {}
 
-clients: dict[Addr, Sock] = {}
+def on_receive(data):
+    print(f'Received {data}')
 
-async def process_client(client: Sock, addr: Addr):
-    loop = asyncio.get_event_loop()
-    clients[addr] = client
-    run = True
-    while run:
-        try:
-            data = await loop.sock_recv(client, 1024)
-            if data:
-                print(f'Received {data} from {addr}')
-            else:
-                run = False
-                print(f'Closing {addr}')
-        except asyncio.CancelledError:
-            run = False
-        except ConnectionResetError:
-            run = False
-            print(f'Connexion closed by {addr}')
-    del clients[addr]
-    client.close()
+def on_remote_close():
+    print('Connection closed by client')
 
-async def send_to_all_periodically():
-    loop = asyncio.get_event_loop()
+async def broadcast_update():
     run = True
     while run:
         try:
             await asyncio.sleep(2)
-            for client in clients.values():
-                await loop.sock_sendall(client, b'Hey')
-                print(f'Sent to {client.getpeername()}')
+            for nw in nws.values():
+                await nw.send(b'Update')
         except asyncio.CancelledError:
             run = False
 
 async def main():
     loop = asyncio.get_event_loop()
-    loop.create_task(send_to_all_periodically())
+    loop.create_task(broadcast_update())
     run = True
     while run:
         try:
-            client, addr = await loop.sock_accept(server)
+            conn, addr = await loop.sock_accept(server)
             print(f'Accepted connection from {addr}')
-            loop.create_task(process_client(client, addr))
+            nw = network.use_existing(conn, on_receive, on_remote_close)
+            nws[addr] = nw
+            nw.start(lambda _: nws.pop(addr))
+
         except asyncio.CancelledError:
             run = False
+    for nw in nws.values():
+        nw.stop()
+    server.close()
 
-def sighandle(sig, frame):
-    print('Cancelling tasks')
-    tasks = asyncio.all_tasks()
-    for task in tasks:
+async def shutdown(sig):
+    print(f"Received signal '{signal.strsignal(sig)}', exiting...")
+    for task in asyncio.all_tasks():
         task.cancel()
+    
 
-for sig in (signal.SIGINT, signal.SIGTERM):
-    signal.signal(sig, sighandle)
+for sig in (signal.SIGTERM, signal.SIGINT):
+    signal.signal(sig, lambda s, _: asyncio.create_task(shutdown(s)))
 
 asyncio.run(main())
-server.close()
