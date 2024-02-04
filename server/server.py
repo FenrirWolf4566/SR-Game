@@ -1,50 +1,59 @@
+import asyncio
+from collections import namedtuple
 import socket
-from _thread import *
-from shared.entities import Player, Fruit
-import pickle
 
-server = "127.0.0.1"
-port = 5555
+from shared import network
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+HOST_ADDR = ('192.168.50.212', 12345)
 
-try:
-    s.bind((server, port))
-except socket.error as e:
-    str(e)
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.bind(HOST_ADDR)
+server.listen()
+print(f'Listening on {HOST_ADDR}')
+server.setblocking(False)
 
-s.listen(2)
-print("Waiting for a connection, Server Started")
+tasks: list[asyncio.Task] = []
 
+networks: dict[network.Address, network.Network] = {}
 
-players = [Player(0,0,50,50,(255,0,0),1000,500), Player(100,100, 50,50, (0,0,255),1000,500)]
-fruits = [Fruit(500,250,10,10,(0,255,0)), Fruit(0,0,50,50,(0,255,0))]
+def on_receive(data):
+    print(f'Received {data}')
 
-def threaded_client(conn, id):
-    conn.send(pickle.dumps(players[id]))
-    reply = {'player':None, 'fruits':fruits}
-    while True:
+def on_remote_close():
+    print('Connection closed by client')
+
+async def broadcast_update():
+    run = True
+    while run:
         try:
-            data = pickle.loads(conn.recv(2048))
-            players[id] = data
+            await asyncio.sleep(2)
+            for nw in networks.values():
+                await nw.send(b'Update')
+        except asyncio.CancelledError:
+            run = False
 
-            if not data:
-                print("Disconnected")
-                break
-            elif currentPlayer==2:
-                reply['player'] = players[(id+1)%2]
+async def accept():
+    loop = asyncio.get_running_loop()
+    run = True
+    while run:
+        try:
+            conn, addr = await loop.sock_accept(server)
+            print(f'Accepted connection from {addr}')
+            nw = network.use_existing(conn, on_receive, on_remote_close)
+            networks[addr] = nw
+            nw.start(lambda _, addr=addr: networks.pop(addr))
+        except asyncio.CancelledError:
+            run = False
 
-            conn.sendall(pickle.dumps(reply))
-        except:
-            break
+async def serve():
+    loop = asyncio.get_running_loop()
+    tasks.append(loop.create_task(broadcast_update()))
+    tasks.append(loop.create_task(accept()))
+    await asyncio.wait(tasks)
 
-    print("Lost connection")
-    conn.close()
-
-currentPlayer = 0
-while True:
-    conn, addr = s.accept()
-    print("Connected to:", addr)
-
-    start_new_thread(threaded_client, (conn, currentPlayer))
-    currentPlayer += 1
+def stop():
+    for task in tasks:
+        task.cancel()
+    for nw in networks.values():
+        nw.stop()
+    server.close()

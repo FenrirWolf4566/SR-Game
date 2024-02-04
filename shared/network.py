@@ -22,11 +22,11 @@ class Network:
         self.sock.close()
 
     async def send(self, data: bytes):
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         await loop.sock_sendall(self.sock, data)
     
     async def __process(self):
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         run = True
         while run:
             try:
