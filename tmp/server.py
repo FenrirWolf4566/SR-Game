@@ -3,7 +3,7 @@ import network
 import signal
 import socket
 
-HOST_ADDR = ('192.168.1.31', 12345)
+HOST_ADDR = ('127.0.0.1', 12345)
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(HOST_ADDR)
@@ -13,8 +13,10 @@ server.setblocking(False)
 
 nws: dict[network.Address, network.Network] = {}
 
+list_of_input_msgs = [(42,10,1),(42,10,1),(42,10,1)]
+
 def on_receive(data):
-    print(f'Received {data}')
+    print(f'Received {str(data)}')
 
 def on_remote_close():
     print('Connection closed by client')
@@ -25,7 +27,8 @@ async def broadcast_update():
         try:
             await asyncio.sleep(2)
             for nw in nws.values():
-                await nw.send(b'Update')
+                print("sending")
+                await nw.send(bytes(list_of_input_msgs))
         except asyncio.CancelledError:
             run = False
 

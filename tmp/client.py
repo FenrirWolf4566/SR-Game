@@ -3,10 +3,11 @@ import network
 import pygame
 
 
-HOST_ADDR = ('192.168.1.31', 12345)
+HOST_ADDR = ('127.0.0.1', 12345)
 
 def on_receive(data):
-    print(f'Received {data}')
+    print("Reception")
+    print(f'Received {list(data)}')
 
 def on_remote_close():
     print('Connection closed by server')
@@ -30,7 +31,7 @@ async def main():
             if event.type == pygame.KEYDOWN:
                 keys = pygame.key.get_pressed()
                 if keys[pygame.K_SPACE]:
-                    await nw.send(b'Hello')
+                    await nw.send(bytes(keys))
         pygame.display.update()
         await asyncio.sleep(0)
         clock.tick(60)
