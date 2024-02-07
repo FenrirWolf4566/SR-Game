@@ -4,7 +4,7 @@ import socket
 
 from shared import network
 
-HOST_ADDR = ('192.168.50.212', 12345)
+HOST_ADDR = ('localhost', 12345)
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(HOST_ADDR)
@@ -16,11 +16,21 @@ tasks: list[asyncio.Task] = []
 
 networks: dict[network.Address, network.Network] = {}
 
+plate = [(100000000000000000000000000000000000000000000,1,1),(2,2,2),(3,3,3),(4,4,4),(5,5,5),(6,6,6),(7,7,7),(8,8,8),(9,9,9),(10,10,10),(11,11,11),(12,12,12),(13,13,13),(14,14,14)]
+
 def on_receive(data):
     print(f'Received {data}')
 
 def on_remote_close():
     print('Connection closed by client')
+
+async def send_to_user(network):
+    try:
+        data_list = [str(tpl) for tpl in plate]
+        data = '|'.join(data_list)
+        await network.send(bytes(data, encoding='utf-8'))
+    except Exception as e:
+        print(f"FAILED WITH EXCEPTION : {e}")
 
 async def broadcast_update():
     run = True
@@ -28,7 +38,7 @@ async def broadcast_update():
         try:
             await asyncio.sleep(2)
             for nw in networks.values():
-                await nw.send(b'Update')
+                await send_to_user(nw)
         except asyncio.CancelledError:
             run = False
 

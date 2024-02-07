@@ -1,6 +1,6 @@
 from shared import network
 
-HOST_ADDR = ('192.168.50.212', 12345)
+HOST_ADDR = ('localhost', 12345)
 
 def on_receive(data):
     print(f'Received {data}')
