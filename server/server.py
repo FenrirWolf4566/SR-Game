@@ -1,4 +1,5 @@
 import asyncio
+from collections import namedtuple
 import socket
 
 from shared import network
@@ -20,8 +21,9 @@ plate = [(1,1,1),(2,2,2),(3,3,3)]
 def on_receive(data):
     print(f'Received {data}')
 
-def on_remote_close():
-    print('Connection closed by client')
+def on_remote_close(addr=None):
+    print(f'Connection closed by {addr}')
+    networks.pop(addr)
 
 async def send_to_user(network):
     try:
@@ -48,8 +50,7 @@ async def accept():
         try:
             conn, addr = await loop.sock_accept(server)
             print(f'Accepted connection from {addr}')
-            cleanup = lambda _, addr=addr: networks.pop(addr)
-            nw = network.use_existing(conn, on_receive, on_remote_close, cleanup)
+            nw = network.use_existing(conn, on_receive, lambda addr=addr: on_remote_close(addr))
             networks[addr] = nw
             nw.start()
         except asyncio.CancelledError:

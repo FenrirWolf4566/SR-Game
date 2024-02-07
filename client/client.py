@@ -33,6 +33,7 @@ async def main():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 nw.stop()
+                print('Quitting')
                 return
             if event.type == pygame.KEYDOWN:
                 keys = pygame.key.get_pressed()
