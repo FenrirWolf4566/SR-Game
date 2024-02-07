@@ -12,6 +12,10 @@ class Network:
         self.on_remote_close = on_remote_close
         self.__task = None
     
+    def get_raw_id(self):
+        sock_infos = self.sock.getpeername()
+        return sock_infos[0] + '.' + str(sock_infos[1])
+
     def start(self):
         self.__task = asyncio.create_task(self.__process())
 
@@ -30,7 +34,7 @@ class Network:
             try:
                 data = await loop.sock_recv(self.sock, 1024)
                 if data:
-                    self.on_receive(data)
+                    self.on_receive(self.get_raw_id(), data)
                 else:
                     run = False
                     self.on_remote_close()

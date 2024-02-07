@@ -8,6 +8,7 @@ HOST_ADDR = ('localhost', 12345)
 
 def on_receive(data):
     try:
+        print('received data')
         list_str_code = data.decode("utf-8")
         string = base64.b64decode(list_str_code)
         print(string)
