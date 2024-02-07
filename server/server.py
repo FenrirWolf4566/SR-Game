@@ -72,7 +72,7 @@ def has_eaten_a_fruit(x, y):
             return True
     return False
 
-def on_receive(raw_identifiant, instruction_b):
+def on_receive(instruction_b, raw_identifiant=None):
     """
     Réagit au changement de position d'un joueur
     instruction = int(data.decode("utf-8"))
@@ -107,7 +107,6 @@ def on_receive(raw_identifiant, instruction_b):
         players[identifiant][3] = y
         if has_eaten_a_fruit(x, y):
             players[identifiant][1] += 10
-            
     return
 
 def on_remote_close(addr=None):
@@ -143,18 +142,21 @@ async def accept():
     run = True
     while run:
         try:
-            conn, addr = await loop.sock_accept(server)
-            print(f'Accepted connection from {addr}')
             if len(available_ids) > 0:
+                conn, addr = await loop.sock_accept(server)
+                print(f'Accepted connection from {addr}')
                 # Attribution de l'id
                 raw = addr[0]+'.'+str(addr[1])
                 identifiant = available_ids[0]
-                available_ids.remove(identifiant)
                 raw_identifiant_table[raw] = identifiant
-
-                nw = network.use_existing(conn, on_receive, lambda addr=addr: on_remote_close(addr))
+                
+                nw = network.use_existing(conn, lambda data, raw=raw: on_receive(data,raw), lambda addr=addr: on_remote_close(addr))
                 networks[addr] = nw
                 nw.start()
+                await send_to_user(nw)
+                available_ids.remove(identifiant)
+            else:
+                await asyncio.sleep(0)
         except asyncio.CancelledError:
             run = False
 

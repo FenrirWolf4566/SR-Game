@@ -6,7 +6,7 @@ Socket = socket.socket
 Address = tuple[str, int]
 
 class Network:
-    def __init__(self, sock: Socket, on_receive: Callable[[bytes], None], on_remote_close: Callable[[], None]):
+    def __init__(self, sock: Socket, on_receive, on_remote_close: Callable[[], None]):
         self.sock = sock
         self.on_receive = on_receive
         self.on_remote_close = on_remote_close
@@ -34,7 +34,7 @@ class Network:
             try:
                 data = await loop.sock_recv(self.sock, 1024)
                 if data:
-                    self.on_receive(self.get_raw_id(), data)
+                    self.on_receive(data)
                 else:
                     run = False
                     self.on_remote_close()
