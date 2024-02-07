@@ -3,12 +3,14 @@ import base64
 import json
 import pygame
 from shared import network
+import time
 
 HOST_ADDR = ('localhost', 12345)
 players = []
 fruits = []
+scores = []
 Im_still_waiting = True # after all this time ...
-
+run = True
 ID = 0
 
 ###################################################
@@ -36,14 +38,36 @@ def on_remote_close():
 ## Network client
 ###################################################
 def jsonParse(json_input):
-    global ID, players, fruits, Im_still_waiting
+    global ID, players, fruits, scores, Im_still_waiting, run
     if 'id' in json_input:
         ID = json_input['id']
+    elif 'scores' in json_input:
+        scores = json_input['scores']
+        run = False
     else :
         Im_still_waiting = False
         players = json_input['players']
         fruits = json_input['fruits']
     return
+
+def draw_score(screen):
+    scores.sort(key=lambda x: (-x[1])) # Sort list of players by actual scores
+    text_to_print = ""
+    placement = 1
+    for score in scores:
+        if score[0]==ID:
+            text_to_print += "-> Place " + str(placement) + " : " + str(score[1]) + " points <-\n"
+        else:
+            text_to_print += "Place " + str(placement) + " : " + str(score[1]) + " points\n"
+        placement += 1
+    screen.fill((100, 100, 100))
+    font = pygame.font.Font('freesansbold.ttf', 32)
+    text = font.render(text_to_print, True, (255,0,0), (0,0,255))
+    textRect = text.get_rect()
+    textRect.center = (400, 300)
+    screen.blit(text, textRect)
+    pygame.display.update()
+
 
 def draw(screen):
     screen.fill((100, 100, 100))
@@ -88,7 +112,6 @@ async def main():
     screen.fill((100, 100, 100))
 
     nw.start()
-    run = True
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -104,3 +127,11 @@ async def main():
         pygame.display.update()
         await asyncio.sleep(0)
         #clock.tick(1)
+    nw.stop()
+    draw_score(screen)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                print('Quitting')
+                return

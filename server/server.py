@@ -24,9 +24,17 @@ fruit_size = 5
 velocity = 5
 
 raw_identifiant_table = {} # perso id to 0/1/2/3
-available_ids = [0,1]
-players = [[0,0,50,300],[1,0,750,300]] # (id, score, x, y)
-fruits = [(50,50),(400,50),(750,50),(225,175),(400,175),(575,175),(400,300),(225,425),(400,425),(575,425),(50,550),(225,550),(400,550),(575,550),(750,550)] # (x,y)
+available_ids = []
+players = [] # (id, score, x, y)
+fruits = []# (x,y)
+
+def set_game():
+    global raw_identifiant_table, available_ids, players, fruits, networks
+    networks = {}
+    raw_identifiant_table = {} # perso id to 0/1/2/3
+    available_ids = [0,1]
+    players = [[0,0,50,300],[1,0,750,300]] # (id, score, x, y)
+    fruits = [(50,250)]#,(400,50),(750,50),(225,175),(400,175),(575,175),(400,300),(225,425),(400,425),(575,425),(50,550),(225,550),(400,550),(575,550),(750,550)] # (x,y)
 
 def borders_of_screen(x, y):
     """
@@ -59,7 +67,6 @@ def is_another_player_here(id_ref, x, y):
                 x_target = p[2]
                 y_target = p[3]
                 ecart = (abs(x_target-x)**2 + abs(y_target-y)**2)**0.5
-                print(f'ecart : {ecart}')
                 if ecart<(2*player_size):
                     return True
         return False
@@ -96,25 +103,20 @@ def on_receive(instruction_b, raw_identifiant=None):
     next_y = players[identifiant][3]
     if instruction=='1':
         #UP
-        print("UP")
         next_y -= velocity
     elif instruction=='2':
         #DOWN
-        print("DOWN")
         next_y += velocity
     elif instruction=='3':
         #RIGHT
-        print("RIGHT")
         next_x += velocity
     elif instruction=='4':
         #LEFT
-        print("LEFT")
         next_x -= velocity
     else:
         print(f"UNKNOWN INPUT")
     next_x, next_y = borders_of_screen(next_x, next_y)
     if not is_another_player_here(identifiant, next_x, next_y):
-        print(f'from ({players[identifiant][2]},{players[identifiant][3]}) to ({next_x},{next_y})')
         players[identifiant][2] = next_x
         players[identifiant][3] = next_y
         if has_eaten_a_fruit(next_x, next_y):
@@ -143,13 +145,24 @@ async def send_to_user(network):
         print(err)
 
 
+async def finish_game():
+    for nw in networks.values():
+        dico_to_send = {'scores': players}
+        json_datas = json.dumps(dico_to_send, indent = 2)
+        b64_datas = base64.b64encode(json_datas.encode('utf-8'))
+        await nw.send(bytes(b64_datas))
+    set_game()
+
 async def broadcast_update():
     run = True
     while run:
         try:
             await asyncio.sleep(0.1)
-            for nw in networks.values():
-                await send_to_user(nw)
+            if len(fruits)==0:
+                await finish_game()
+            else:
+                for nw in networks.values():
+                    await send_to_user(nw)
         except asyncio.CancelledError:
             run = False
 
@@ -177,6 +190,7 @@ async def accept():
             run = False
 
 async def serve():
+    set_game()
     loop = asyncio.get_running_loop()
     tasks.append(loop.create_task(broadcast_update()))
     tasks.append(loop.create_task(accept()))
