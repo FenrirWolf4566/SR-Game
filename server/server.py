@@ -21,56 +21,69 @@ networks: dict[network.Address, network.Network] = {}
 
 player_size = 10
 fruit_size = 5
-velocity = 3
+velocity = 5
 
 raw_identifiant_table = {} # perso id to 0/1/2/3
 available_ids = [0,1]
-players = [(1,1,1,1),(2,2,2,2)] # (id, score, x, y)
-fruits = [(1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9),(10,10)] # (x,y)
+players = [[0,0,50,50],[1,0,100,100]] # (id, score, x, y)
+fruits = [(10,10)] # (x,y)
 
 def borders_of_screen(x, y):
     """
     Vérifie que les bordures de l'écran ne sont pas dépassées par le joueur
     Renvoit les coordonnées après correction éventuelle
     """
-    good_x = x
-    good_y = y
-    if x < 0:
-        good_x = 0
-    elif x > 800:
-        good_x = 800
-    if y < 0:
-        good_y = 0
-    elif y > 600:
-        good_y = 600
-    return (good_x, good_y)
+    try:
+        good_x = x
+        good_y = y
+        if x-player_size < 0:
+            good_x = player_size
+        elif x+player_size > 800:
+            good_x = 800-player_size
+        if y-player_size < 0:
+            good_y = player_size
+        elif y+player_size > 600:
+            good_y = 600-player_size
+        return good_x, good_y
+    except Exception as e:
+        print(f'borders_of_screen : {e}')
+        return x,y
 
 def is_another_player_here(id_ref, x, y):
     """
     Vérifie que le joueur n'entre pas en collision avec un autre
     """
-    for p in players:
-        if p[0] != id_ref:
-            x_target = p[2]
-            y_target = p[3]
-            ecart = (abs(x_target-x)**2 + abs(y_target-y)**2)**0.5
-            if ecart<(2*player_size):
-                return True
-    return False
+    try:
+        for p in players:
+            if p[0] != id_ref:
+                x_target = p[2]
+                y_target = p[3]
+                ecart = (abs(x_target-x)**2 + abs(y_target-y)**2)**0.5
+                print(f'ecart : {ecart}')
+                if ecart<(2*player_size):
+                    return True
+        return False
+    except Exception as e:
+        print(f'is_another_player_here : {e}')
+        return False
 
 def has_eaten_a_fruit(x, y):
     """
     Vérifie si un fruit a été mangé
     Retire le fruit si c'est le cas
     """
-    for f in fruits:
-        x_target = f[0]
-        y_target = f[1]
-        ecart = (abs(x_target-x)**2 + abs(y_target-y)**2)**0.5
-        if ecart<(player_size + fruit_size):
-            fruits.remove(f)
-            return True
-    return False
+    try:
+        for f in fruits:
+            x_target = f[0]
+            y_target = f[1]
+            ecart = (abs(x_target-x)**2 + abs(y_target-y)**2)**0.5
+            if ecart<(player_size + fruit_size):
+                fruits.remove(f)
+                return True
+        return False
+    except Exception as e:
+        print(f'has_eaten_fruit : {e}')
+        return False
 
 def on_receive(instruction_b, raw_identifiant=None):
     """
@@ -79,39 +92,43 @@ def on_receive(instruction_b, raw_identifiant=None):
     """
     instruction = instruction_b.decode('utf-8')
     identifiant = raw_identifiant_table[raw_identifiant]
-    x = players[identifiant][2]
-    y = players[identifiant][3]
-    print(f'{raw_identifiant} : {identifiant} ({x}:{y})')
+    next_x = players[identifiant][2]
+    next_y = players[identifiant][3]
     if instruction=='1':
         #UP
         print("UP")
-        y -= velocity
+        next_y -= velocity
     elif instruction=='2':
         #DOWN
         print("DOWN")
-        y += velocity
+        next_y += velocity
     elif instruction=='3':
         #RIGHT
         print("RIGHT")
-        x += velocity
+        next_x += velocity
     elif instruction=='4':
         #LEFT
         print("LEFT")
-        x -= velocity
+        next_x -= velocity
     else:
         print(f"UNKNOWN INPUT")
-
-    x, y = borders_of_screen(x, y)
-    if not is_another_player_here(identifiant, x, y):
-        players[identifiant][2] = x
-        players[identifiant][3] = y
-        if has_eaten_a_fruit(x, y):
+    next_x, next_y = borders_of_screen(next_x, next_y)
+    if not is_another_player_here(identifiant, next_x, next_y):
+        print(f'from ({players[identifiant][2]},{players[identifiant][3]}) to ({next_x},{next_y})')
+        players[identifiant][2] = next_x
+        players[identifiant][3] = next_y
+        if has_eaten_a_fruit(next_x, next_y):
             players[identifiant][1] += 10
     return
 
 def on_remote_close(addr=None):
     print(f'Connection closed by {addr}')
+    raw_id = addr[0]+'.'+str(addr[1])
+    identifiant = raw_identifiant_table[raw_id]
+    del raw_identifiant_table[raw_id]
     networks.pop(addr)
+    available_ids.append(identifiant)
+    return
 
 async def send_to_user(network):
     try:
@@ -119,7 +136,6 @@ async def send_to_user(network):
             dico_to_send = {'id':raw_identifiant_table[network.get_raw_id()]}
         else:
             dico_to_send = {'players': players, 'fruits':fruits}
-        print(dico_to_send)
         json_datas = json.dumps(dico_to_send, indent = 2)
         b64_datas = base64.b64encode(json_datas.encode('utf-8'))
         await network.send(bytes(b64_datas))
@@ -131,7 +147,7 @@ async def broadcast_update():
     run = True
     while run:
         try:
-            await asyncio.sleep(2)
+            await asyncio.sleep(0.1)
             for nw in networks.values():
                 await send_to_user(nw)
         except asyncio.CancelledError:

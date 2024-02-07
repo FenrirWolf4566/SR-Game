@@ -4,8 +4,11 @@ import json
 import pygame
 from shared import network
 
-HOST_ADDR = ('217.160.249.124', 5000)
+HOST_ADDR = ('localhost', 12345)
+players = []
+fruits = []
 
+ID = 0
 
 ###################################################
 ## Network client
@@ -13,10 +16,10 @@ HOST_ADDR = ('217.160.249.124', 5000)
 
 def on_receive(data):
     try:
-        print('received data')
         list_str_code = data.decode("utf-8")
-        # string = base64.b64decode(list_str_code)
-        #print(string)
+        string = base64.b64decode(list_str_code)
+        plate = json.loads(string)
+        jsonParse(plate)
     except Exception as e:
         print(f"FAILED WITH EXCEPTION : {e}")
 
@@ -32,38 +35,37 @@ def on_remote_close():
 ## Network client
 ###################################################
 def jsonParse(json_input):
+    global ID, players, fruits
+    if 'id' in json_input:
+        ID = json_input['id']
+    else :
+        players = json_input['players']
+        fruits = json_input['fruits']
+    return
 
-    json_in = json.loads(json_input)
-    
-    players = []
-    fruits = []
-
-    for player in json_in['players']:
-        players.append(player)
-    for fruit in json_in['fruits']:
-        fruits.append(fruit)
-
-    return(players, fruits)
-
-def draw(screen, players, fruits):
+def draw(screen):
+    screen.fill((100, 100, 100))
     for player in players:
-        x, y = player['x'], player['y']
-        id = player['id']
-        color = (0, 0, 255) if id == 'ME' else (255, 0, 0)
+        x, y = player[2], player[3]
+        id = player[0]
+        color = (0, 0, 255) if id == ID else (255, 0, 0)
         pygame.draw.circle(screen, color, (x, y), 10)
     for fruit in fruits:
-        x, y = fruit['x'], fruit['y']
+        x, y = fruit[0], fruit[1]
         pygame.draw.circle(screen, (0, 255, 0), (x, y), 5)
 
-
-async def move(keys):
+async def move(nw, keys):
     if keys[pygame.K_UP] or keys[pygame.K_z]:
+        print(f'move 1')
         await nw.send(b'1')
     elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
+        print(f'move 2')
         await nw.send(b'2')
     elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+        print(f'move 3')
         await nw.send(b'3')
     elif keys[pygame.K_LEFT] or keys[pygame.K_q]:
+        print(f'move 4')
         await nw.send(b'4')
 
 ###################################################
@@ -74,42 +76,13 @@ async def move(keys):
 
 
 async def main():
-
-    json_input = '''
-        {
-        "players": [
-            {
-            "id": "BG",
-            "x": 100,
-            "y": 200
-            },
-            {
-            "id": "GB",
-            "x": 300,
-            "y": 400
-            }
-        ],
-        "fruits": [
-            {
-            "x": 50,
-            "y": 50
-            },
-            {
-            "x": 200,
-            "y": 100
-            }
-        ]
-        }
-        '''
-
-
     nw = network.create(HOST_ADDR, on_receive, on_remote_close)
 
     pygame.init()
     screen = pygame.display.set_mode((800, 600))
     pygame.display.set_caption('Client')
     clock = pygame.time.Clock()
-    screen.fill((255, 255, 255))
+    screen.fill((100, 100, 100))
 
     nw.start()
     run = True
@@ -122,11 +95,9 @@ async def main():
                 return
             if event.type == pygame.KEYDOWN:
                 keys = pygame.key.get_pressed()
-                await move(keys)
+                await move(nw, keys)
 
-        players, fruits = jsonParse(json_input)
-        draw(screen, players, fruits)
-
+        draw(screen)
         pygame.display.update()
         await asyncio.sleep(0)
-        clock.tick(60)
+        #clock.tick(0.1)
