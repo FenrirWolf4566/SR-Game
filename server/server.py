@@ -25,8 +25,8 @@ velocity = 5
 
 raw_identifiant_table = {} # perso id to 0/1/2/3
 available_ids = [0,1]
-players = [[0,0,50,50],[1,0,100,100]] # (id, score, x, y)
-fruits = [(10,10)] # (x,y)
+players = [[0,0,50,300],[1,0,750,300]] # (id, score, x, y)
+fruits = [(50,50),(400,50),(750,50),(225,175),(400,175),(575,175),(400,300),(225,425),(400,425),(575,425),(50,550),(225,550),(400,550),(575,550),(750,550)] # (x,y)
 
 def borders_of_screen(x, y):
     """
@@ -118,7 +118,7 @@ def on_receive(instruction_b, raw_identifiant=None):
         players[identifiant][2] = next_x
         players[identifiant][3] = next_y
         if has_eaten_a_fruit(next_x, next_y):
-            players[identifiant][1] += 10
+            players[identifiant][1] += 1
     return
 
 def on_remote_close(addr=None):

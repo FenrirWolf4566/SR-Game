@@ -7,6 +7,7 @@ from shared import network
 HOST_ADDR = ('localhost', 12345)
 players = []
 fruits = []
+Im_still_waiting = True # after all this time ...
 
 ID = 0
 
@@ -35,10 +36,11 @@ def on_remote_close():
 ## Network client
 ###################################################
 def jsonParse(json_input):
-    global ID, players, fruits
+    global ID, players, fruits, Im_still_waiting
     if 'id' in json_input:
         ID = json_input['id']
     else :
+        Im_still_waiting = False
         players = json_input['players']
         fruits = json_input['fruits']
     return
@@ -52,20 +54,21 @@ def draw(screen):
         pygame.draw.circle(screen, color, (x, y), 10)
     for fruit in fruits:
         x, y = fruit[0], fruit[1]
-        pygame.draw.circle(screen, (0, 255, 0), (x, y), 5)
+        if y>=300:
+            border_color = (255,0,0)
+        else:
+            border_color = (255,255,0)
+        pygame.draw.circle(screen, border_color, (x, y), 6)
+        pygame.draw.circle(screen, (0,255,0), (x, y), 5)
 
 async def move(nw, keys):
     if keys[pygame.K_UP] or keys[pygame.K_z]:
-        print(f'move 1')
         await nw.send(b'1')
     elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
-        print(f'move 2')
         await nw.send(b'2')
     elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-        print(f'move 3')
         await nw.send(b'3')
     elif keys[pygame.K_LEFT] or keys[pygame.K_q]:
-        print(f'move 4')
         await nw.send(b'4')
 
 ###################################################
@@ -93,11 +96,11 @@ async def main():
                 nw.stop()
                 print('Quitting')
                 return
-            if event.type == pygame.KEYDOWN:
+            if event.type == pygame.KEYDOWN and not Im_still_waiting:
                 keys = pygame.key.get_pressed()
                 await move(nw, keys)
 
         draw(screen)
         pygame.display.update()
         await asyncio.sleep(0)
-        #clock.tick(0.1)
+        #clock.tick(1)
