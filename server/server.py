@@ -1,5 +1,4 @@
 import asyncio
-from collections import namedtuple
 import socket
 
 from shared import network
@@ -49,9 +48,10 @@ async def accept():
         try:
             conn, addr = await loop.sock_accept(server)
             print(f'Accepted connection from {addr}')
-            nw = network.use_existing(conn, on_receive, on_remote_close)
+            cleanup = lambda _, addr=addr: networks.pop(addr)
+            nw = network.use_existing(conn, on_receive, on_remote_close, cleanup)
             networks[addr] = nw
-            nw.start(lambda _, addr=addr: networks.pop(addr))
+            nw.start()
         except asyncio.CancelledError:
             run = False
 
