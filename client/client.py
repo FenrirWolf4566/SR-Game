@@ -109,6 +109,7 @@ async def main():
     screen = pygame.display.set_mode((800, 600))
     pygame.display.set_caption('Client')
     clock = pygame.time.Clock()
+    pygame.key.set_repeat(50)
     screen.fill((100, 100, 100))
 
     nw.start()
@@ -119,7 +120,7 @@ async def main():
                 nw.stop()
                 print('Quitting')
                 return
-            if event.type == pygame.KEYDOWN and not Im_still_waiting:
+            if event.type == pygame.KEYDOWN and not Im_still_waiting: #
                 keys = pygame.key.get_pressed()
                 await move(nw, keys)
 
