@@ -32,7 +32,9 @@ class Network:
         run = True
         while run:
             try:
-                data = await loop.sock_recv(self.sock, 2048)
+                buffer_size_code = await loop.sock_recv(self.sock, 4)
+                buffer_size = int(buffer_size_code.decode('utf-8'))
+                data = await loop.sock_recv(self.sock, buffer_size)
                 if data:
                     self.on_receive(data)
                 else:

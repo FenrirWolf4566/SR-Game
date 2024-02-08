@@ -19,21 +19,22 @@ ID = 0
 
 def on_receive(data):
     try:
-        list_str_code = data.decode("utf-8")
+        decoded_data = data.decode("utf-8")
+        str_code = decoded_data
     except Exception as e:
         print(f"1 : {e}")
     try:
-        string = base64.b64decode(list_str_code)
+        string = base64.b64decode(str_code)
     except Exception as e:
-        print(f"2 : {e}")
+        print(f"2 : {e} / {str_code}")
     try:
         plate = json.loads(string)
     except Exception as e:
-        print(f"3 : {string}")
+        print(f"3 : {e} / {str_code} / {string}")
     try:
         jsonParse(plate)
     except Exception as e:
-        print(f"4 : {plate} / {e}")
+        print(f"4 : {e} / {plate}")
 
 def on_remote_close():
     print('Connection closed by server')
@@ -118,7 +119,7 @@ async def main():
     screen = pygame.display.set_mode((800, 600))
     pygame.display.set_caption('Client')
     clock = pygame.time.Clock()
-    pygame.key.set_repeat(50)
+    pygame.key.set_repeat(25) # delay before repeating keys (ms) ~40 times per second
     screen.fill((100, 100, 100))
 
     nw.start()

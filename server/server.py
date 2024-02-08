@@ -1,5 +1,5 @@
 import asyncio
-from collections import namedtuple
+#from collections import namedtuple
 import socket
 
 import json
@@ -143,9 +143,11 @@ async def send_to_user(network):
             dico_to_send = {'players': players, 'fruits':fruits}
         json_datas = json.dumps(dico_to_send, indent = 2)
         b64_datas = base64.b64encode(json_datas.encode('utf-8'))
-        await network.send(bytes(b64_datas))
+        data_size = len(b64_datas)
+        to_send = format(data_size, '04d').encode('utf-8')+b64_datas
+        await network.send(bytes(to_send))
     except Exception as err:
-        print(err)
+        print("AH : "+err)
 
 
 async def finish_game():
@@ -153,14 +155,16 @@ async def finish_game():
         dico_to_send = {'scores': players}
         json_datas = json.dumps(dico_to_send, indent = 2)
         b64_datas = base64.b64encode(json_datas.encode('utf-8'))
-        await nw.send(bytes(b64_datas))
+        data_size = len(b64_datas)
+        to_send = format(data_size, '04d').encode('utf-8')+b64_datas
+        await nw.send(bytes(to_send))
     set_game()
 
 async def broadcast_update():
     run = True
     while run:
         try:
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.04) # 25 fps
             if len(fruits)==0:
                 await finish_game()
             else:
@@ -186,6 +190,8 @@ async def accept():
                 networks[addr] = nw
                 nw.start()
                 await send_to_user(nw)
+                if len(available_ids)==1:
+                    await asyncio.sleep(10) # temps de laisser le temps au client de recevoir le message
                 available_ids.remove(identifiant)
             else:
                 await asyncio.sleep(0)
