@@ -143,9 +143,7 @@ async def send_to_user(network):
             dico_to_send = {'players': players, 'fruits':fruits}
         json_datas = json.dumps(dico_to_send, indent = 2)
         b64_datas = base64.b64encode(json_datas.encode('utf-8'))
-        data_size = len(b64_datas)
-        to_send = format(data_size, '04d').encode('utf-8')+b64_datas
-        await network.send(bytes(to_send))
+        await network.send(bytes(b64_datas))
     except Exception as err:
         print("AH : "+err)
 
@@ -155,9 +153,7 @@ async def finish_game():
         dico_to_send = {'scores': players}
         json_datas = json.dumps(dico_to_send, indent = 2)
         b64_datas = base64.b64encode(json_datas.encode('utf-8'))
-        data_size = len(b64_datas)
-        to_send = format(data_size, '04d').encode('utf-8')+b64_datas
-        await nw.send(bytes(to_send))
+        await nw.send(bytes(b64_datas))
     set_game()
 
 async def broadcast_update():
@@ -190,8 +186,6 @@ async def accept():
                 networks[addr] = nw
                 nw.start()
                 await send_to_user(nw)
-                if len(available_ids)==1:
-                    await asyncio.sleep(10) # temps de laisser le temps au client de recevoir le message
                 available_ids.remove(identifiant)
             else:
                 await asyncio.sleep(0)

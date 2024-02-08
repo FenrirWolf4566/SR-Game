@@ -96,6 +96,7 @@ def draw(screen):
         pygame.draw.circle(screen, (0,255,0), (x, y), 3)
 
 async def move(nw, keys):
+    # Prefixe de 1 pour le buffer size
     if keys[pygame.K_UP] or keys[pygame.K_z]:
         await nw.send(b'1')
     elif keys[pygame.K_DOWN] or keys[pygame.K_s]:

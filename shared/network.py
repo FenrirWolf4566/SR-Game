@@ -24,8 +24,10 @@ class Network:
         self.sock.close()
 
     async def send(self, data: bytes):
+        data_size = len(data)
+        to_send = format(data_size, '04d').encode('utf-8')+data
         loop = asyncio.get_running_loop()
-        await loop.sock_sendall(self.sock, data)
+        await loop.sock_sendall(self.sock, to_send)
     
     async def __process(self):
         loop = asyncio.get_running_loop()
