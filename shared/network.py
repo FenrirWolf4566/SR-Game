@@ -24,6 +24,8 @@ class Network:
         self.sock.close()
 
     async def send(self, data: bytes):
+        # On rajoute la taille des données pour que le client sache combien de
+        # données il doit recevoir et adapter la taille du buffer en conséquence
         data_size = len(data)
         to_send = format(data_size, '04d').encode('utf-8')+data
         loop = asyncio.get_running_loop()
