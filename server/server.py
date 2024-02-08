@@ -131,8 +131,8 @@ def on_remote_close(addr=None):
     del raw_identifiant_table[raw_id]
     networks.pop(addr)
     available_ids.append(identifiant)
-    if len(available_ids)==NB_MAX_PLAYER:
-        finish_game()
+    if len(available_ids)==2:
+        set_game()
     return
 
 async def send_to_user(network):
