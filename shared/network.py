@@ -32,7 +32,7 @@ class Network:
         run = True
         while run:
             try:
-                data = await loop.sock_recv(self.sock, 1024)
+                data = await loop.sock_recv(self.sock, 2048)
                 if data:
                     self.on_receive(data)
                 else:

@@ -27,12 +27,13 @@ raw_identifiant_table = {} # perso id to 0/1/2/3
 available_ids = []
 players = [] # (id, score, x, y)
 fruits = []# (x,y)
+NB_MAX_PLAYER = 2
 
 def set_game():
     global raw_identifiant_table, available_ids, players, fruits, networks
     networks = {}
-    raw_identifiant_table = {} # perso id to 0/1/2/3
-    available_ids = [0,1]
+    raw_identifiant_table = {} # perso id to 0/1/2/3/...
+    available_ids = [i for i in range(NB_MAX_PLAYER)]
     players = [[0,0,50,300],[1,0,750,300]] # (id, score, x, y)
     fruits = [(50,50),(400,50),(750,50),(225,175),(400,175),(575,175),(400,300),(225,425),(400,425),(575,425),(50,550),(225,550),(400,550),(575,550),(750,550)] # (x,y)
 
@@ -130,6 +131,8 @@ def on_remote_close(addr=None):
     del raw_identifiant_table[raw_id]
     networks.pop(addr)
     available_ids.append(identifiant)
+    if len(available_ids)==NB_MAX_PLAYER:
+        finish_game()
     return
 
 async def send_to_user(network):

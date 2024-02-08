@@ -20,11 +20,20 @@ ID = 0
 def on_receive(data):
     try:
         list_str_code = data.decode("utf-8")
+    except Exception as e:
+        print(f"1 : {e}")
+    try:
         string = base64.b64decode(list_str_code)
+    except Exception as e:
+        print(f"2 : {e}")
+    try:
         plate = json.loads(string)
+    except Exception as e:
+        print(f"3 : {string}")
+    try:
         jsonParse(plate)
     except Exception as e:
-        print(f"FAILED WITH EXCEPTION : {e}")
+        print(f"4 : {plate} / {e}")
 
 def on_remote_close():
     print('Connection closed by server')
@@ -83,7 +92,7 @@ def draw(screen):
         else:
             border_color = (255,255,0)
         pygame.draw.circle(screen, border_color, (x, y), 6)
-        pygame.draw.circle(screen, (0,255,0), (x, y), 5)
+        pygame.draw.circle(screen, (0,255,0), (x, y), 3)
 
 async def move(nw, keys):
     if keys[pygame.K_UP] or keys[pygame.K_z]:
