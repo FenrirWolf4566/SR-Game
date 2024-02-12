@@ -3,13 +3,13 @@ import base64
 import json
 import pygame
 from shared import network
-import time
 
+HOST_ADDR = ('217.160.249.124', 5000)
 HOST_ADDR = ('localhost', 12345)
 players = []
 fruits = []
 scores = []
-Im_still_waiting = True # after all this time ...
+Im_still_waiting = True # You could never know what it's like \ Your blood like winter freezes just like ice \ And there's a cold and lonely light that shines from you \ You'll wind up like the wreck you hide behind that mask you use \ And did you think this fool could never win \ Well look at me, I'm coming back again \ I got a taste of love in a simple way \ And if you need to know while I'm still waiting you just fade away \ Don't you know I'm still waiting better than I ever did \ Looking like a true survivor, feeling like a little kid \ I'm still waiting after all this time \ Picking up the pieces of my life without you on my mind \ I'm still waiting yeah yeah yeah (x2) \ Once I never could hope to win \ You starting down the road leaving me again \ The threats you made were meant to cut me down \ And if our love was just a circus you'd be a clown by now \ Y' know, I'm still waiting better than I ever did \ Looking like a true survivor, feeling like a little kid \ I'm still waiting after all this time \ Picking up the pieces of my life without you on my mind \ I'm still waiting yeah yeah yeah (x2) \  (Solo) \ Don't you know that I'm still waiting better than I ever did \ Looking like a true survivor, feeling like a little kid \ I'm still waiting after all this time \ Picking up the pieces of my life without you on my mind \ I'm still waiting yeah yeah yeah (x4)
 run = True
 ID = 0
 
@@ -18,36 +18,25 @@ ID = 0
 ###################################################
 
 def on_receive(data):
+    """
+    Deccode the data received from the server
+    """
     try:
-        decoded_data = data.decode("utf-8")
-        str_code = decoded_data
+        decoded_data = data.decode("utf-8") # decryption from binary
+        string = base64.b64decode(decoded_data) # decryption from base64
+        plate = json.loads(string) # load as a JSON
+        jsonParse(plate) # Parse the JSON
     except Exception as e:
-        print(f"1 : {e}")
-    try:
-        string = base64.b64decode(str_code)
-    except Exception as e:
-        print(f"2 : {e} / {str_code}")
-    try:
-        plate = json.loads(string)
-    except Exception as e:
-        print(f"3 : {e} / {str_code} / {string}")
-    try:
-        jsonParse(plate)
-    except Exception as e:
-        print(f"4 : {e} / {plate}")
+        print(f"Error during decoding in 'on_receive': {e}")
 
 def on_remote_close():
     print('Connection closed by server')
 
-###################################################
 
-
-
-
-###################################################
-## Network client
-###################################################
 def jsonParse(json_input):
+    """
+    Parse the JSON input and update the global variables
+    """
     global ID, players, fruits, scores, Im_still_waiting, run
     if 'id' in json_input:
         ID = json_input['id']
@@ -61,31 +50,75 @@ def jsonParse(json_input):
     return
 
 def draw_score(screen):
-    scores.sort(key=lambda x: (-x[1])) # Sort list of players by actual scores
-    text_to_print = ""
-    placement = 1
-    for score in scores:
-        if score[0]==ID:
-            text_to_print += "-> Place " + str(placement) + " : " + str(score[1]) + " points <-\n"
-        else:
-            text_to_print += "Place " + str(placement) + " : " + str(score[1]) + " points\n"
-        placement += 1
-    screen.fill((100, 100, 100))
-    font = pygame.font.Font('freesansbold.ttf', 32)
-    text = font.render(text_to_print, True, (255,0,0), (0,0,255))
-    textRect = text.get_rect()
-    textRect.center = (400, 300)
-    screen.blit(text, textRect)
-    pygame.display.update()
+    """
+    Draw the score of the player on the screen (ending screen)
+    """
+    try:
+        scores.sort(key=lambda x: (-x[1])) # Sort list of players by actual scores
+        text_to_print = ""
+        placement = 1
+        for score in scores:
+            if score[0]==ID:
+                place = "1er" if placement==1 else str(placement) + "ème"
+                text_to_print += place + " : " + str(score[1]) + "/15 points"
+                break
+            placement += 1
+
+        bg = pygame.image.load("client/reunion_flag.png")
+        screen.blit(bg, (0, 0))
+        font = pygame.font.Font('freesansbold.ttf', 25)
+        
+        as_won = "Gagné" if placement==1 else "Perdu"
+        text_score = font.render(as_won, True, (50,14,59), (166,207,213))
+        textRect_score = text_score.get_rect()
+        textRect_score.center = (400, 450)
+        screen.blit(text_score, textRect_score)
+
+        text = font.render(text_to_print, True, (50,14,59), (166,207,213))
+        textRect = text.get_rect()
+        textRect.center = (400, 500)
+        screen.blit(text, textRect)
+        pygame.display.update()
+    except Exception as e:
+        print(f"Error during drawing score : {e}")
 
 
 def draw(screen):
+    """
+    Update the screen with the new positions of the players and the fruits
+    """
     screen.fill((100, 100, 100))
+    own_score = -1
+    other_score = -1
     for player in players:
         x, y = player[2], player[3]
         id = player[0]
-        color = (0, 0, 255) if id == ID else (255, 0, 0)
+        color = ()
+        if id == ID:
+            color = (0, 0, 255)
+            own_score = player[1]
+        else:
+            color = (255, 0, 0)
+            other_score = player[1]
         pygame.draw.circle(screen, color, (x, y), 10)
+    score_draw = ""
+    if own_score>other_score:
+        score_draw = "premier : "+str(own_score)
+    elif own_score<other_score:
+        score_draw = "second : "+str(own_score)
+    else:
+        score_draw = "ex aequo : "+str(own_score)
+    
+    if len(players)==0:
+        score_draw = "Waiting for other player"
+
+    font = pygame.font.Font('freesansbold.ttf', 25)
+    text_score = font.render(score_draw, True, (50,14,59))
+    textRect_score = text_score.get_rect()
+    textRect_score.topright = (800, 0)
+    screen.blit(text_score, textRect_score)
+    
+
     for fruit in fruits:
         x, y = fruit[0], fruit[1]
         if y>=300:
@@ -96,7 +129,9 @@ def draw(screen):
         pygame.draw.circle(screen, (0,255,0), (x, y), 3)
 
 async def move(nw, keys):
-    # Prefixe de 1 pour le buffer size
+    """
+    Detect the key pressed and send the corresponding move to the server
+    """
     if keys[pygame.K_UP] or keys[pygame.K_z]:
         await nw.send(b'1')
     elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
@@ -119,7 +154,6 @@ async def main():
     pygame.init()
     screen = pygame.display.set_mode((800, 600))
     pygame.display.set_caption('Client')
-    clock = pygame.time.Clock()
     pygame.key.set_repeat(25) # delay before repeating keys (ms) ~40 times per second
     screen.fill((100, 100, 100))
 
@@ -128,22 +162,21 @@ async def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
+                await nw.send(b'quit')
                 nw.stop()
-                print('Quitting')
                 return
-            if event.type == pygame.KEYDOWN and not Im_still_waiting: #
+            if event.type == pygame.KEYDOWN and not Im_still_waiting:
                 keys = pygame.key.get_pressed()
                 await move(nw, keys)
 
         draw(screen)
         pygame.display.update()
         await asyncio.sleep(0)
-        #clock.tick(1)
+    await nw.send(b'quit')
     nw.stop()
     draw_score(screen)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                print('Quitting')
                 return
