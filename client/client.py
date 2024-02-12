@@ -3,7 +3,6 @@ import base64
 import json
 import pygame
 from shared import network
-import time
 
 HOST_ADDR = ('217.160.249.124', 5000)
 HOST_ADDR = ('localhost', 12345)
@@ -63,36 +62,31 @@ def jsonParse(json_input):
 
 def draw_score(screen):
     scores.sort(key=lambda x: (-x[1])) # Sort list of players by actual scores
-    text_to_print_1 = ""
-    text_to_print_2 = ""
+    text_to_print = ""
     placement = 1
     for score in scores:
         if score[0]==ID:
-            text_to_print_1 += "-> Place " + str(placement) + " : " + str(score[1]) + " points <-"
-        else:
-            text_to_print_2 += "Place " + str(placement) + " : " + str(score[1]) + " points"
+            place = "1er" if placement==1 else str(placement) + "ème"
+            text_to_print += place + " : " + str(score[1]) + "/15 points"
+            break
         placement += 1
 
+    print("TEXT TO PRINT : ", text_to_print)
     bg = pygame.image.load("client/reunion_flag.png")
     #INSIDE OF THE GAME LOOP
     screen.blit(bg, (0, 0))
     font = pygame.font.Font('freesansbold.ttf', 25)
     
-    as_won = "Gagné" if text_to_print_1[0]=='-' else "Perdu"
-    text_score = font.render(as_won, True, (255,0,0), (0,0,255))
+    as_won = "Gagné" if placement==1 else "Perdu"
+    text_score = font.render(as_won, True, (50,14,59), (166,207,213))
     textRect_score = text_score.get_rect()
-    textRect_score.center = (400, 100)
+    textRect_score.center = (400, 450)
     screen.blit(text_score, textRect_score)
 
-    text1 = font.render(text_to_print_1, True, (255,0,0), (0,0,255))
-    textRect_1 = text1.get_rect()
-    textRect_1.center = (400, 350)
-    screen.blit(text1, textRect_1)
-
-    text2 = font.render(text_to_print_2, True, (255,0,0), (0,0,255))
-    textRect_2 = text1.get_rect()
-    textRect_2.center = (400, 400)
-    screen.blit(text2, textRect_2)
+    text = font.render(text_to_print, True, (50,14,59), (166,207,213))
+    textRect = text.get_rect()
+    textRect.center = (400, 500)
+    screen.blit(text, textRect)
     pygame.display.update()
 
 
