@@ -3,8 +3,8 @@ import base64
 import json
 import pygame
 from shared import network
-import time
 
+HOST_ADDR = ('217.160.249.124', 5000)
 HOST_ADDR = ('localhost', 12345)
 players = []
 fruits = []
@@ -66,15 +66,26 @@ def draw_score(screen):
     placement = 1
     for score in scores:
         if score[0]==ID:
-            text_to_print += "-> Place " + str(placement) + " : " + str(score[1]) + " points <-\n"
-        else:
-            text_to_print += "Place " + str(placement) + " : " + str(score[1]) + " points\n"
+            place = "1er" if placement==1 else str(placement) + "ème"
+            text_to_print += place + " : " + str(score[1]) + "/15 points"
+            break
         placement += 1
-    screen.fill((100, 100, 100))
-    font = pygame.font.Font('freesansbold.ttf', 32)
-    text = font.render(text_to_print, True, (255,0,0), (0,0,255))
+
+    print("TEXT TO PRINT : ", text_to_print)
+    bg = pygame.image.load("client/reunion_flag.png")
+    #INSIDE OF THE GAME LOOP
+    screen.blit(bg, (0, 0))
+    font = pygame.font.Font('freesansbold.ttf', 25)
+    
+    as_won = "Gagné" if placement==1 else "Perdu"
+    text_score = font.render(as_won, True, (50,14,59), (166,207,213))
+    textRect_score = text_score.get_rect()
+    textRect_score.center = (400, 450)
+    screen.blit(text_score, textRect_score)
+
+    text = font.render(text_to_print, True, (50,14,59), (166,207,213))
     textRect = text.get_rect()
-    textRect.center = (400, 300)
+    textRect.center = (400, 500)
     screen.blit(text, textRect)
     pygame.display.update()
 
