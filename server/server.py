@@ -105,7 +105,6 @@ def on_receive(instruction_b, raw_identifiant=None):
     next_x = players[identifiant][2]
     next_y = players[identifiant][3]
     if instruction=='quit':
-        print("QUIT")
         splitted = raw_identifiant.split(".")
         port = splitted[-1]
         ip_length = len(raw_identifiant) - len(port) - 1
@@ -147,7 +146,6 @@ def on_remote_close(addr=None):
         available_ids.append(identifiant)
         if len(available_ids)==2:
             set_game()
-        print(f'Available ids length : {len(available_ids)}\n')
     except Exception as e:
         print(f'Failed with error : {e}')
     return
@@ -174,11 +172,14 @@ async def finish_game():
     Stop the game by sending the final scores to all connected clients
     """
     for nw in networks.values():
-        dico_to_send = {'scores': players}
-        json_datas = json.dumps(dico_to_send, indent = 2)
-        b64_datas = base64.b64encode(json_datas.encode('utf-8'))
-        await nw.send(bytes(b64_datas))
-        nw.close()
+        try:
+            dico_to_send = {'scores': players}
+            json_datas = json.dumps(dico_to_send, indent = 2)
+            b64_datas = base64.b64encode(json_datas.encode('utf-8'))
+            await nw.send(bytes(b64_datas))
+            nw.stop()
+        except Exception as e:
+            print(f'Error during finish_game : {e}')
     set_game()
 
 async def broadcast_update():

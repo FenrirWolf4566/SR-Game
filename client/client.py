@@ -53,31 +53,34 @@ def draw_score(screen):
     """
     Draw the score of the player on the screen (ending screen)
     """
-    scores.sort(key=lambda x: (-x[1])) # Sort list of players by actual scores
-    text_to_print = ""
-    placement = 1
-    for score in scores:
-        if score[0]==ID:
-            place = "1er" if placement==1 else str(placement) + "ème"
-            text_to_print += place + " : " + str(score[1]) + "/15 points"
-            break
-        placement += 1
+    try:
+        scores.sort(key=lambda x: (-x[1])) # Sort list of players by actual scores
+        text_to_print = ""
+        placement = 1
+        for score in scores:
+            if score[0]==ID:
+                place = "1er" if placement==1 else str(placement) + "ème"
+                text_to_print += place + " : " + str(score[1]) + "/15 points"
+                break
+            placement += 1
 
-    bg = pygame.image.load("client/reunion_flag.png")
-    screen.blit(bg, (0, 0))
-    font = pygame.font.Font('freesansbold.ttf', 25)
-    
-    as_won = "Gagné" if placement==1 else "Perdu"
-    text_score = font.render(as_won, True, (50,14,59), (166,207,213))
-    textRect_score = text_score.get_rect()
-    textRect_score.center = (400, 450)
-    screen.blit(text_score, textRect_score)
+        bg = pygame.image.load("client/reunion_flag.png")
+        screen.blit(bg, (0, 0))
+        font = pygame.font.Font('freesansbold.ttf', 25)
+        
+        as_won = "Gagné" if placement==1 else "Perdu"
+        text_score = font.render(as_won, True, (50,14,59), (166,207,213))
+        textRect_score = text_score.get_rect()
+        textRect_score.center = (400, 450)
+        screen.blit(text_score, textRect_score)
 
-    text = font.render(text_to_print, True, (50,14,59), (166,207,213))
-    textRect = text.get_rect()
-    textRect.center = (400, 500)
-    screen.blit(text, textRect)
-    pygame.display.update()
+        text = font.render(text_to_print, True, (50,14,59), (166,207,213))
+        textRect = text.get_rect()
+        textRect.center = (400, 500)
+        screen.blit(text, textRect)
+        pygame.display.update()
+    except Exception as e:
+        print(f"Error during drawing score : {e}")
 
 
 def draw(screen):
@@ -161,7 +164,6 @@ async def main():
                 pygame.quit()
                 await nw.send(b'quit')
                 nw.stop()
-                print('Quitting')
                 return
             if event.type == pygame.KEYDOWN and not Im_still_waiting:
                 keys = pygame.key.get_pressed()
@@ -170,11 +172,11 @@ async def main():
         draw(screen)
         pygame.display.update()
         await asyncio.sleep(0)
+    await nw.send(b'quit')
     nw.stop()
     draw_score(screen)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                print('Quitting 2')
                 return
