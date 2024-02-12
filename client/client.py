@@ -5,6 +5,7 @@ import pygame
 from shared import network
 import time
 
+HOST_ADDR = ('217.160.249.124', 5000)
 HOST_ADDR = ('localhost', 12345)
 players = []
 fruits = []
@@ -62,20 +63,36 @@ def jsonParse(json_input):
 
 def draw_score(screen):
     scores.sort(key=lambda x: (-x[1])) # Sort list of players by actual scores
-    text_to_print = ""
+    text_to_print_1 = ""
+    text_to_print_2 = ""
     placement = 1
     for score in scores:
         if score[0]==ID:
-            text_to_print += "-> Place " + str(placement) + " : " + str(score[1]) + " points <-\n"
+            text_to_print_1 += "-> Place " + str(placement) + " : " + str(score[1]) + " points <-"
         else:
-            text_to_print += "Place " + str(placement) + " : " + str(score[1]) + " points\n"
+            text_to_print_2 += "Place " + str(placement) + " : " + str(score[1]) + " points"
         placement += 1
-    screen.fill((100, 100, 100))
-    font = pygame.font.Font('freesansbold.ttf', 32)
-    text = font.render(text_to_print, True, (255,0,0), (0,0,255))
-    textRect = text.get_rect()
-    textRect.center = (400, 300)
-    screen.blit(text, textRect)
+
+    bg = pygame.image.load("client/reunion_flag.png")
+    #INSIDE OF THE GAME LOOP
+    screen.blit(bg, (0, 0))
+    font = pygame.font.Font('freesansbold.ttf', 25)
+    
+    as_won = "Gagné" if text_to_print_1[0]=='-' else "Perdu"
+    text_score = font.render(as_won, True, (255,0,0), (0,0,255))
+    textRect_score = text_score.get_rect()
+    textRect_score.center = (400, 100)
+    screen.blit(text_score, textRect_score)
+
+    text1 = font.render(text_to_print_1, True, (255,0,0), (0,0,255))
+    textRect_1 = text1.get_rect()
+    textRect_1.center = (400, 350)
+    screen.blit(text1, textRect_1)
+
+    text2 = font.render(text_to_print_2, True, (255,0,0), (0,0,255))
+    textRect_2 = text1.get_rect()
+    textRect_2.center = (400, 400)
+    screen.blit(text2, textRect_2)
     pygame.display.update()
 
 
