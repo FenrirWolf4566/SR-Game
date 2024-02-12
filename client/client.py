@@ -19,12 +19,22 @@ ID = 0
 
 def on_receive(data):
     try:
-        list_str_code = data.decode("utf-8")
-        string = base64.b64decode(list_str_code)
+        decoded_data = data.decode("utf-8")
+        str_code = decoded_data
+    except Exception as e:
+        print(f"1 : {e}")
+    try:
+        string = base64.b64decode(str_code)
+    except Exception as e:
+        print(f"2 : {e} / {str_code}")
+    try:
         plate = json.loads(string)
+    except Exception as e:
+        print(f"3 : {e} / {str_code} / {string}")
+    try:
         jsonParse(plate)
     except Exception as e:
-        print(f"FAILED WITH EXCEPTION : {e}")
+        print(f"4 : {e} / {plate}")
 
 def on_remote_close():
     print('Connection closed by server')
@@ -83,9 +93,10 @@ def draw(screen):
         else:
             border_color = (255,255,0)
         pygame.draw.circle(screen, border_color, (x, y), 6)
-        pygame.draw.circle(screen, (0,255,0), (x, y), 5)
+        pygame.draw.circle(screen, (0,255,0), (x, y), 3)
 
 async def move(nw, keys):
+    # Prefixe de 1 pour le buffer size
     if keys[pygame.K_UP] or keys[pygame.K_z]:
         await nw.send(b'1')
     elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
@@ -109,7 +120,7 @@ async def main():
     screen = pygame.display.set_mode((800, 600))
     pygame.display.set_caption('Client')
     clock = pygame.time.Clock()
-    pygame.key.set_repeat(50)
+    pygame.key.set_repeat(25) # delay before repeating keys (ms) ~40 times per second
     screen.fill((100, 100, 100))
 
     nw.start()

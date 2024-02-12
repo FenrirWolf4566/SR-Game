@@ -24,15 +24,21 @@ class Network:
         self.sock.close()
 
     async def send(self, data: bytes):
+        # On rajoute la taille des données pour que le client sache combien de
+        # données il doit recevoir et adapter la taille du buffer en conséquence
+        data_size = len(data)
+        to_send = format(data_size, '04d').encode('utf-8')+data
         loop = asyncio.get_running_loop()
-        await loop.sock_sendall(self.sock, data)
+        await loop.sock_sendall(self.sock, to_send)
     
     async def __process(self):
         loop = asyncio.get_running_loop()
         run = True
         while run:
             try:
-                data = await loop.sock_recv(self.sock, 2048)
+                buffer_size_code = await loop.sock_recv(self.sock, 4)
+                buffer_size = int(buffer_size_code.decode('utf-8'))
+                data = await loop.sock_recv(self.sock, buffer_size)
                 if data:
                     self.on_receive(data)
                 else:
