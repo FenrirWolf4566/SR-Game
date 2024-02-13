@@ -54,14 +54,21 @@ Les inputs sont simplement envoyés au serveur avec le code suivant :
 * LEFT / Q : 4
 
 ## Network et communication
-Envoi avec la taille comme préfix
-Compression JSON en b64 pour la taille
+Suite à quelques soucis concernant la communication, notamment dus à la taille du buffer de lecture, nous avons opté pour la stratégie suivante : lorsque A envoie un message à B, la fonction qui s'occupe de l'envoi ajoutera un préfixe de quatre caractères au message. Ces derniers représentent la taille du message en bytes. Par exemple, l'envoie de la chaîne "Hello World!", le préfixe sera "0011" (utf-8 donc 1 bytes par caractère).
+
+Ainsi, à la réception, nous commençons par lire les 4 premiers caractères (buffer_size = 4), et nous les convertissons en int. Cela nous donne la taille du message à venir (11 dans notre exemple) ce qui nous permet d'avoir un buffer_size constamment adapté.
+
+Comme dit précédemment, les messages échangés doivent être sous forme binaire. Dans le cas de la communication du client vers le serveur, c'est le cas. Cependant, du serveur vers le client, puisque le message est plus complexe (format JSON), nous avons choisi de convertir ce dernier en base64 en de l'envoyer. Cela nous permet de raccourcir le nombre de bits à envoyer.
+
+Cette stratégie a été adoptée avant de rencontrer certaines difficultés, et nous envisagions encore d’étendre le jeu à plus de joueurs, et donc avoir des messages beaucoup plus volumineux à envoyer. Dans l'état actuel, la conversion en base64 est loin d'être primordiale.
 
 # Difficultés rencontrées
 ## Implémentation
-Pickle RCE, tout refaire à 0 après les deux premières séances (+ difficultés sur le réseau)
+Durant la première séance, nous avons trouvé un [tutoriel en ligne](https://www.techwithtim.net/tutorials/python-online-game-tutorial) proposant une implémentation initiale d'un client, d'un serveur et de la communication entre les deux. Cependant, durant la seconde, nous avons découvert que la librairie utilisée par ce dernier, "Pickle", permet des RCE (Remote Code Execution). Nous avons donc décidé de refaire la partie communication à partir de 0. Cela a été plus compliqué que prévu et s'est avéré très long.
+
+Finalement, nous avions perdu trop de temps sur ça, et nous avons donc décidé de grandement réduire les features de notre jeu pour nous concentrer sur l'essentiel.
 
 ## Organisation
-Bcp trop de travail / peut de séance (orga via discord plus difficile)
+La période durant laquelle s'est déroulé le projet n'a également pas aidé. Nous avions beaucoup de travail dans beaucoup de matières, et donc peu de temps pour avancer sur le projet en dehors des heures dédiées.
 
-
+Comme nous travaillions rarement tous les trois en même temps, notre organisation était plus complexe, notamment pour gérer le git.
