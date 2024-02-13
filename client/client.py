@@ -4,7 +4,7 @@ import json
 import pygame
 from shared import network
 
-HOST_ADDR = ('217.160.249.124', 5000)
+#HOST_ADDR = ('217.160.249.124', 5000)
 HOST_ADDR = ('localhost', 12345)
 players = []
 fruits = []
